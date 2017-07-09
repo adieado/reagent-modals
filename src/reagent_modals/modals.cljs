@@ -8,9 +8,12 @@
 ;;; Recommended: at the start of the document.
 
 
-(def modal-content (atom {"user-modal" {:content [:div] :shown nil :size nil} "attr-modal" {:content [:div] :shown nil :size nil}}))
+(def modal-content (atom {}))
 
 (def modal-id (atom nil))
+
+(defn init-empty-modals [modal-ids]
+  (reset! modal-content (zipmap [modal-ids] (repeat {:content [:div] :shown nil :size nil}))))
 
 (defn get-modal []
   (dom/getElement @modal-id))
