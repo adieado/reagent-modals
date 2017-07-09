@@ -8,14 +8,12 @@
 ;;; Recommended: at the start of the document.
 
 
-(def modal-id "reagent-modal")
+(def modal-content (atom {"user-modal" {:content [:div] :shown nil :size nil} "attr-modal" {:content [:div] :shown nil :size nil}}))
 
-(def modal-content (atom {:content [:div]
-                          :shown nil
-                          :size nil}))
+(def modal-id (atom nil))
 
 (defn get-modal []
-  (dom/getElement modal-id))
+  (dom/getElement @modal-id))
 
 (defn- with-opts [opts]
   (let [m (js/jQuery (get-modal))]
@@ -44,27 +42,27 @@
 
 
 
-(defn modal-window* []
-  (let [{:keys [content size]} @modal-content
+(defn modal-window* [m-id]
+  (let [{:keys [content size]} (get @modal-content m-id)
         size-class {:lg "modal-lg"
                     :sm "modal-sm"}]
-    [:div.modal.fade {:id modal-id :tab-index -1 :role "dialog"}
+    [:div.modal.fade {:id m-id :tab-index -1 :role "dialog"}
      [:div.modal-dialog {:class (get size-class size)}
       [:div.modal-content
        content]]]))
 
-(def modal-window
+(defn modal-window [m-id]
   (with-meta
-    modal-window*
+    (modal-window* m-id)
     {:component-did-mount
      (fn [e] (let [m (js/jQuery (get-modal))]
                (.call (aget m "on") m "hidden.bs.modal"
-                      #(do (when-let [f (:hidden @modal-content)] (f))
-                           (reset! modal-content {:content [:div]}))) ;;clear the modal when hidden
+                      #(do (when-let [f (:hidden (get @modal-content m-id))] (f))
+                           (swap! modal-content assoc m-id {:content [:div]}))) ;;clear the modal when hidden
                (.call (aget m "on") m "shown.bs.modal"
-                      #(when-let [f (:shown @modal-content)] (f)))
+                      #(when-let [f (:shown (get @modal-content m-id))] (f)))
                (.call (aget m "on") m "hide.bs.modal"
-                      #(when-let [f (:hide @modal-content)] (f)))))}))
+                      #(when-let [f (:hide (get @modal-content m-id))] (f)))))}))
 
 
 ;;; main function
@@ -80,10 +78,13 @@
    - :hidden -> a function called once the modal is hidden.
    - :size -> Can be :lg (large) or :sm (small). Everything else defaults to medium.
    - :keyboard -> if true, `esc' key can dismiss the modal. Default to true.
-   - :backdrop -> true (default): backdrop. 
-                  \"static\" : backdrop, but doesn't close the model when clicked upon. 
+   - :backdrop -> true (default): backdrop.
+                  \"static\" : backdrop, but doesn't close the model when clicked upon.
                   false : no backdrop."
-  ([reagent-content] (modal! reagent-content nil))
-  ([reagent-content configs]
-   (reset! modal-content (merge {:content reagent-content} configs))
+  ([m-id reagent-content]
+    (reset! modal-id m-id)
+    (modal! reagent-content nil))
+  ([m-id reagent-content configs]
+   (reset! modal-id m-id)
+   (swap! modal-content assoc m-id (merge {:content reagent-content} configs))
    (show-modal! (select-keys configs [:keyboard :backdrop]))))
