@@ -65,7 +65,10 @@
                (.call (aget m "on") m "shown.bs.modal"
                       #(when-let [f (:shown (get @modal-content m-id))] (f)))
                (.call (aget m "on") m "hide.bs.modal"
-                      #(when-let [f (:hide (get @modal-content m-id))] (f)))))}))
+                      #(when-let [f (:hide (get @modal-content m-id))] (do
+                                                                          (f)
+                                                                          (reset! @modal-content {})
+                                                                          (reset! @modal-id nil))))))}))
 
 
 ;;; main function
