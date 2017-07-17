@@ -1,7 +1,8 @@
 (ns reagent-modals.modals
   (:require [reagent.core :as r :refer [atom]]
             [goog.dom :as dom]
-            [goog.events :as events])
+            [goog.events :as events]
+            [goog.array :as g-array])
   (:import [goog.events EventType]))
 
 ;;; Make sure to create the modal-window element somewhere in the dom.
@@ -31,6 +32,14 @@
 
 (defmethod show-modal! false [keyboard]
   (with-opts #js {:keyboard keyboard}))
+
+(defn position-modal [{:keys [x y]}]
+  (if (and (not (nil? x)) (not (nil? y)))
+    (let [m (get-modal)]
+      (set! (.-top (.-style (first (g-array/toArray (dom/getChildren m))))) y)
+      (set! (.-left (.-style (first (g-array/toArray (dom/getChildren m))))) x)
+      (set! (.-position (.-style (first (g-array/toArray (dom/getChildren m))))) "absolute")
+    )))
 
 (defn close-modal! []
   (let [m (js/jQuery (get-modal))]
@@ -93,4 +102,5 @@
   ([m-id reagent-content configs]
    (reset! modal-id m-id)
    (swap! modal-content assoc m-id (merge {:content reagent-content} configs))
-   (show-modal! (select-keys configs [:keyboard :backdrop]))))
+   (show-modal! (select-keys configs [:keyboard :backdrop])
+   (position-modal (select-keys configs [:x :y])))))
